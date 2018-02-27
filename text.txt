@@ -1,0 +1,1 @@
+When we talk about hash tables, we're actually talking about dictionary. While an array can be used to construct hash tables, array indexes its elements using integers. ... Dictionaries in Python are implemented using hash tables. It is an array whose indexes are obtained using a hash function on the keys.
