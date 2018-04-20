@@ -3,6 +3,12 @@ import collections
 import os
 import string
 import nltk
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import random
+import numpy as np
+from nltk.stem.porter import PorterStemmer
+stemmer = PorterStemmer()
 '''
 Read's each line and obtains the words, separated by spaces and
 places in dictionary (wordcount).
@@ -15,6 +21,8 @@ translator = str.maketrans('', '', string.punctuation)
 Combines all fake reviews and gets word counts
 
  or word_tag[0][1] == "NNPS" or word_tag[0][1] == "RB" or word_tag[0][1] == "RBR" or word_tag[0][1] == "RBS" or word_tag[0][1] == "VB" or word_tag[0][1] == "VBD" or word_tag[0][1] == "VBG" or word_tag[0][1] == "VBN" or word_tag[0][1] == "VBZ"
+'''
+
 '''
 wordsFake = collections.Counter()
 wordsNegFake = collections.Counter()
@@ -89,38 +97,87 @@ for i in range (1,6):
                     if "!" in word:
                         exclaimFake = exclaimFake + 1
                         exclaimPosFake = exclaimPosFake + 1
+'''
+def stem(text):
+    text_stem = [stemmer.stem(token) for token in text.split(' ')]
+    text_stem_join = ' '.join(text_stem)
+    return text_stem_join
 
-
+reviews = []
+sentencePoolString = ""
 #Negative real
 for i in range (1,6):
     path = "op_spam_v1.4/op_spam_v1.4/negative_polarity/truthful_from_Web/fold" + str(i) + "/"
     for filename in os.listdir(path):
         with open(path + filename,"r") as f:
-            #print(path + filename)
-            numberOfNegRealReviews = numberOfNegRealReviews + 1
-            numberOfRealReviews = numberOfRealReviews + 1
+            review = ""
             for line in f:
-                for word in line.split():
-                    wordsRealCount = wordsRealCount + 1
-                    wordsNegRealCount = wordsNegRealCount + 1
-                    word_token = nltk.word_tokenize(word)
-                    word_tag = nltk.pos_tag(word_token)
-                    if word_tag[0][1] == "JJ" or word_tag[0][1] == "JJR" or word_tag[0][1] == "JJS":
-                        wordsReal[word.translate(translator).lower()] += 1
-                        wordsNegReal[word.translate(translator).lower()] += 1
-                    if "!" in word:
-                        exclaimReal = exclaimReal + 1
-                        exclaimNegReal = exclaimNegReal + 1
+                review = review + line.strip()
+                sentencePoolString = sentencePoolString + line.strip()
 
+            #reviewSent = review.replace("!", ".").split(".")
+            reviewSent = nltk.sent_tokenize(review)
+            reviews.append(reviewSent)
+
+baseReview = random.choice(reviews)
+baseReviewString = ' '.join(baseReview)
+#print(baseReviewToken)
+
+sentencePool = nltk.sent_tokenize(sentencePoolString)
+
+'''
+WHY WONT IT REMOVE THE SENTENCES FROM THE BASE REVIEW?!?!
+'''
+
+for sentence in baseReview:
+    if sentence in sentencePool:
+        sentencePool.remove(sentence)
+
+print(baseReviewString)
+
+newReview = ""
+
+index_list = []
+for sentence in baseReview:
+    tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+    tfidf_matrix = tfidf_vectorizer.fit_transform([sentence] + sentencePool)
+    #print(tfidf_matrix[0])
+    arr = cosine_similarity(tfidf_matrix[0], tfidf_matrix)
+    max = 0
+    index = 0
+    count = 0
+    #print(arr[0][0])
+    for item in arr[0]:
+        #print(count, item)
+        if item < .99 and item > max and count not in index_list:
+            print(item)
+            max = item
+            index = count
+        count = count + 1
+    print(index)
+    index_list.append(index)
+    newReview = newReview + sentencePool[index] + " "
+print(index_list)
+
+print()
+print(newReview)
+
+
+'''
 #Positive real
 for i in range (1,6):
     path = "op_spam_v1.4/op_spam_v1.4/positive_polarity/truthful_from_TripAdvisor/fold" + str(i) + "/"
     for filename in os.listdir(path):
         with open(path + filename,"r") as f:
             #print(path + filename)
+            #print(f)
+            #pos_real = nltk.sent_tokenize(text)
+
             numberOfPosRealReviews = numberOfPosRealReviews + 1
             numberOfRealReviews = numberOfRealReviews + 1
+
             for line in f:
+
                 for word in line.split():
                     wordsPosRealCount = wordsPosRealCount + 1
                     wordsRealCount = wordsRealCount + 1
@@ -134,7 +191,10 @@ for i in range (1,6):
                         exclaimPosReal = exclaimPosReal + 1
 
 
+print(pos_real)
+'''
 
+'''
 print("Most common words in Fake reviews:")
 print(collections.Counter(wordsFake).most_common(10))
 print("Average word count in Fake reviews:")
@@ -181,4 +241,5 @@ print("Average word count in Positive Real reviews:")
 print(wordsPosRealCount/numberOfPosRealReviews)
 print("Average exclaimation point in Positive Real reviews:")
 print(exclaimPosReal/numberOfPosRealReviews)
+'''
 f.close()
