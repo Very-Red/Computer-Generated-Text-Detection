@@ -150,12 +150,13 @@ for sentence in baseReview:
     for item in arr[0]:
         #print(count, item)
         if item < .99 and item > max and count not in index_list:
-            print(item)
+            #print(item)
             max = item
             index = count
         count = count + 1
-    print(index)
+    #print(index)
     index_list.append(index)
+    print(sentencePool[index])
     newReview = newReview + sentencePool[index] + " "
 print(index_list)
 
